@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - "**.go"
+      - "**.feature"
       - go.mod
       - go.sum
       - .github/workflows/CICD.yml
