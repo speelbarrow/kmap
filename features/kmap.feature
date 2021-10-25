@@ -3,7 +3,6 @@ Feature: kmap type
   As a program
   I need to understand what a k-map is
 
-  @wip
   Scenario Outline: values
     Given the k-map size is <size>
     And I randomly generate the arguments to the k-map
@@ -16,7 +15,6 @@ Feature: kmap type
       | 3    |
       | 4    |
 
-  @wip
   Scenario Outline: size, rows, columns
     Given the k-map size is <size>
     When I initialize the k-map
@@ -30,7 +28,6 @@ Feature: kmap type
       | 3    | 2   | 4   |
       | 4    | 4   | 4   |
 
-  @wip
   Scenario: in order of minterms
     Given the k-map size is 4
     And the arguments to the k-map are
@@ -39,7 +36,17 @@ Feature: kmap type
     Then the k-map values should match
       | 1 | 0 | 1 | 0 |
       | 0 | 1 | 0 | 1 |
-      | 0 | 1 | 0 | 1 |
       | 1 | 0 | 1 | 0 |
+      | 0 | 1 | 0 | 1 |
     And the Minterms method should output
       | 1 | 0 | 0 | 1 | 0 | 1 | 1 | 0 | 0 | 1 | 1 | 0 | 1 | 0 | 0 | 1 |
+
+  Scenario Outline: invalid size
+    Given the k-map size is <size>
+    When I initialize the k-map
+    Then an error should have occurred
+
+    Scenarios:
+      | size |
+      | 5    |
+      | 1    |

@@ -1,6 +1,7 @@
 package kmap_test
 
 import (
+	"context"
 	"fmt"
 	"github.com/cucumber/godog"
 	"github.com/noah-friedman/kmap"
@@ -15,13 +16,11 @@ var (
 	k        *kmap.Kmap
 	size     int
 	kmapArgs []int
+	e        error
 )
 
 func iInitializeTheKmap() error {
-	var e error
-	if k, e = kmap.NewKmap(size, kmapArgs...); e != nil {
-		return e
-	}
+	k, e = kmap.NewKmap(size, kmapArgs...)
 	return nil
 }
 
@@ -59,11 +58,20 @@ func theKmapValuesShouldMatch(expected *godog.Table) error {
 	}
 
 	for row, actual := range k.Values {
-		expected := expected.Rows[row]
+		exp := expected.Rows[row]
 		for col, actual := range actual {
-			expected := expected.Cells[col].Value == "1"
-			if actual != expected {
-				return fmt.Errorf("row %d, col %d: expected %t, got %t", row, col, expected, actual)
+			exp := exp.Cells[col].Value == "1"
+			if actual != exp {
+				var expArr [][]bool
+				for _, v := range expected.Rows {
+					var r []bool
+					for _, v := range v.Cells {
+						r = append(r, v.Value == "1")
+					}
+					expArr = append(expArr, r)
+				}
+
+				return fmt.Errorf("row %d, col %d: expected %t, got %t\nexpected:\n%v\nactual:\n%v\n", row, col, exp, actual, expArr, k.Values)
 			}
 		}
 	}
@@ -109,7 +117,25 @@ func thePropertyOfTheKmapShouldBe(prop string, expected int64) error {
 	return nil
 }
 
+func anErrorShouldHaveOccurred() error {
+	if e == nil {
+		return fmt.Errorf("expected an error occurred but found no error")
+	}
+
+	e = nil
+	return nil
+}
+
 func stepdefs(ctx *godog.ScenarioContext) {
+	ctx.Before(func(ctx context.Context, _ *godog.Scenario) (context.Context, error) {
+		k = nil
+		size = 0
+		kmapArgs = nil
+		e = nil
+
+		return ctx, nil
+	})
+
 	ctx.Step(`^I initialize the k-map$`, iInitializeTheKmap)
 	ctx.Step(`^I randomly generate the arguments to the k-map$`, iRandomlyGenerateTheArgumentsToTheKmap)
 	ctx.Step(`^the arguments to the k-map are$`, theArgumentsToTheKmapAre)
@@ -118,7 +144,15 @@ func stepdefs(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the k-map values should match the arguments$`, theKmapValuesShouldMatchTheArguments)
 	ctx.Step(`^the Minterms method should output$`, theMintermsMethodShouldOutput)
 	ctx.Step(`^the "([^"]*)" property of the k-map should be (\d+)$`, thePropertyOfTheKmapShouldBe)
+	ctx.Step(`^an error should have occurred$`, anErrorShouldHaveOccurred)
 
+	ctx.After(func(ctx context.Context, sc *godog.Scenario, err error) (context.Context, error) {
+		if e != nil {
+			return ctx, fmt.Errorf("the following error occured at some point: %s", e.Error())
+		}
+
+		return ctx, nil
+	})
 }
 
 func TestFeatures(t *testing.T) {
