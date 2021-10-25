@@ -41,8 +41,5 @@ Feature: kmap type
       | 0 | 1 | 0 | 1 |
       | 0 | 1 | 0 | 1 |
       | 1 | 0 | 1 | 0 |
-    And the Minterms method should match
-      | 1 | 0 | 0 | 1 |
-      | 0 | 1 | 1 | 0 |
-      | 0 | 1 | 1 | 0 |
-      | 1 | 0 | 0 | 1 |
+    And the Minterms method should output
+      | 1 | 0 | 0 | 1 | 0 | 1 | 1 | 0 | 0 | 1 | 1 | 0 | 1 | 0 | 0 | 1 |
