@@ -8,48 +8,50 @@ import (
 	"math"
 	"math/rand"
 	"reflect"
+	"runtime"
 	"strconv"
 	"testing"
 )
 
-var (
-	k        *kmap.Kmap
-	size     int
-	kmapArgs []int
-	e        error
-)
+func iInitializeTheKmap(ctx context.Context) context.Context {
+	k, e := kmap.NewKmap(ctx.Value("size").(int), ctx.Value("args").([]int)...)
 
-func iInitializeTheKmap() error {
-	k, e = kmap.NewKmap(size, kmapArgs...)
-	return nil
+	return context.WithValue(context.WithValue(ctx, "kmap", k), "err", e)
 }
 
-func iRandomlyGenerateTheArgumentsToTheKmap() {
-	size := int(math.Pow(2, float64(size)))
+func iRandomlyGenerateTheArgumentsToTheKmap(ctx context.Context) context.Context {
+	size := int(math.Pow(2, float64(ctx.Value("size").(int))))
+
+	var args []int
 	for i := 0; i < size; i++ {
 		if rand.Int31n(2) == 1 {
-			kmapArgs = append(kmapArgs, i)
+			args = append(args, i)
 		}
 	}
+
+	return context.WithValue(ctx, "args", args)
 }
 
-func theArgumentsToTheKmapAre(args *godog.Table) error {
+func theArgumentsToTheKmapAre(ctx context.Context, args *godog.Table) (context.Context, error) {
+	var r []int
 	for _, v := range args.Rows[0].Cells {
 		if i, e := strconv.Atoi(v.Value); e != nil {
-			return e
+			return ctx, e
 		} else {
-			kmapArgs = append(kmapArgs, i)
+			r = append(r, i)
 		}
 	}
 
-	return nil
+	return context.WithValue(ctx, "args", r), nil
 }
 
-func theKmapSizeIs(s int) {
-	size = s
+func theKmapSizeIs(ctx context.Context, size int) context.Context {
+	return context.WithValue(ctx, "size", size)
 }
 
-func theKmapValuesShouldMatch(expected *godog.Table) error {
+func theKmapValuesShouldMatch(ctx context.Context, expected *godog.Table) error {
+	k := ctx.Value("kmap").(*kmap.Kmap)
+
 	if l := len(expected.Rows); l != k.Rows {
 		return fmt.Errorf("expected %d rows, found %d", l, k.Rows)
 	}
@@ -79,12 +81,13 @@ func theKmapValuesShouldMatch(expected *godog.Table) error {
 	return nil
 }
 
-func theKmapValuesShouldMatchTheArguments() error {
+func theKmapValuesShouldMatchTheArguments(ctx context.Context) error {
 	var (
+		k        = ctx.Value("kmap").(*kmap.Kmap)
 		actual   = k.Minterms()
 		expected = make([]bool, len(actual))
 	)
-	for _, v := range kmapArgs {
+	for _, v := range ctx.Value("args").([]int) {
 		expected[v] = true
 	}
 
@@ -99,8 +102,8 @@ func theKmapValuesShouldMatchTheArguments() error {
 	return nil
 }
 
-func theMintermsMethodShouldOutput(expected *godog.Table) error {
-	actual := k.Minterms()
+func theMintermsMethodShouldOutput(ctx context.Context, expected *godog.Table) error {
+	actual := ctx.Value("kmap").(*kmap.Kmap).Minterms()
 	for i, exp := range expected.Rows[0].Cells {
 		if exp := exp.Value == "1"; exp != actual[i] {
 			return fmt.Errorf("expected minterm %d to be %t but found %t\nexpected:\n%v\nactual:\n%v\n", i, exp, actual[i], expected, actual)
@@ -109,29 +112,40 @@ func theMintermsMethodShouldOutput(expected *godog.Table) error {
 	return nil
 }
 
-func thePropertyOfTheKmapShouldBe(prop string, expected int64) error {
-	if actual := reflect.ValueOf(*k).FieldByName(prop).Int(); expected != actual {
+func thePropertyOfTheKmapShouldBe(ctx context.Context, prop string, expected int64) error {
+	if actual := reflect.ValueOf(*(ctx.Value("kmap").(*kmap.Kmap))).FieldByName(prop).Int(); expected != actual {
 		return fmt.Errorf("expected %d, got %d", expected, actual)
 	}
 
 	return nil
 }
 
-func anErrorShouldHaveOccurred() error {
-	if e == nil {
-		return fmt.Errorf("expected an error occurred but found no error")
+func anErrorShouldHaveOccurred(ctx context.Context) (context.Context, error) {
+	if ctx.Value("err") == nil {
+		return ctx, fmt.Errorf("expected an error occurred but found no error")
 	}
 
-	e = nil
-	return nil
+	return context.WithValue(ctx, "err", nil), nil
 }
 
-func stepdefs(ctx *godog.ScenarioContext) {
+func iParseTheString(s string) error {
+	return godog.ErrPending
+}
+
+func theParsingResultShouldBe(expected *godog.Table) error {
+	return godog.ErrPending
+}
+
+func Stepdefs(ctx *godog.ScenarioContext) {
 	ctx.Before(func(ctx context.Context, _ *godog.Scenario) (context.Context, error) {
-		k = nil
-		size = 0
-		kmapArgs = nil
-		e = nil
+		for k, v := range map[string]interface{}{
+			"kmap": (*kmap.Kmap)(nil),
+			"size": 0,
+			"args": []int(nil),
+			"err":  error(nil),
+		} {
+			ctx = context.WithValue(ctx, k, v)
+		}
 
 		return ctx, nil
 	})
@@ -145,10 +159,13 @@ func stepdefs(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the Minterms method should output$`, theMintermsMethodShouldOutput)
 	ctx.Step(`^the "([^"]*)" property of the k-map should be (\d+)$`, thePropertyOfTheKmapShouldBe)
 	ctx.Step(`^an error should have occurred$`, anErrorShouldHaveOccurred)
+	ctx.Step(`^I parse the string "([^"]*)"$`, iParseTheString)
+	ctx.Step(`^the parsing result should be$`, theParsingResultShouldBe)
 
 	ctx.After(func(ctx context.Context, sc *godog.Scenario, err error) (context.Context, error) {
-		if e != nil {
-			return ctx, fmt.Errorf("the following error occured at some point: %s", e.Error())
+		switch e := ctx.Value("err"); e.(type) {
+		case error:
+			return ctx, fmt.Errorf("the following error occured at some point: %s", e.(error).Error())
 		}
 
 		return ctx, nil
@@ -157,13 +174,14 @@ func stepdefs(ctx *godog.ScenarioContext) {
 
 func TestFeatures(t *testing.T) {
 	if r := (godog.TestSuite{
-		ScenarioInitializer: stepdefs,
+		ScenarioInitializer: Stepdefs,
 		Options: &godog.Options{
-			Format:    "pretty",
-			Paths:     []string{"features"},
-			Randomize: -1,
-			TestingT:  t,
-			Tags:      "~@wip",
+			Concurrency: runtime.NumCPU(),
+			Format:      "pretty",
+			Paths:       []string{"features"},
+			Randomize:   -1,
+			TestingT:    t,
+			Tags:        "~@wip",
 		},
 	}).Run(); r != 0 {
 		t.Fatalf("godog exited with non-zero exit code '%d'", r)

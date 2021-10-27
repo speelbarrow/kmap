@@ -2,9 +2,10 @@ module github.com/noah-friedman/kmap
 
 go 1.17
 
+require github.com/cucumber/godog v0.12.0
+
 require (
 	github.com/cucumber/gherkin-go/v19 v19.0.3 // indirect
-	github.com/cucumber/godog v0.12.0 // indirect
 	github.com/cucumber/messages-go/v16 v16.0.1 // indirect
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
 	github.com/hashicorp/go-immutable-radix v1.3.0 // indirect
