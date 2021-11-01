@@ -3,14 +3,12 @@ Feature: parse string input
   As a program
   I need to parse said arguments
 
-  @wip
   Scenario: valid input
     Given the delimiter is ","
     When I parse the string "0,3,6,11"
     Then the parsing result should be
       | 0 | 3 | 6 | 11 |
 
-  @wip
   Scenario Outline: variable delimiters
     Given the delimiter is <delim>
     When I parse the string "<input>"
@@ -24,7 +22,6 @@ Feature: parse string input
       | "/"   | 0/1/4/7    | 0 | 1 | 4 | 7 |
       | " "   | 3 6 2 9    | 3 | 6 | 2 | 9 |
 
-  @wip
   Scenario Outline: invalid input
     Given the delimiter is ","
     When I parse the string "<input>"
