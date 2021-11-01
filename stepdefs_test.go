@@ -129,14 +129,27 @@ func anErrorShouldHaveOccurred(ctx context.Context) (context.Context, error) {
 }
 
 func iParseTheString(ctx context.Context, s string) context.Context {
-	parsed, err := kmap.Parse(s)
+	parsed, err := kmap.Parse(s, ctx.Value("delim").(string))
 
 	return context.WithValue(context.WithValue(ctx, "parsed", parsed), "err", err)
 }
 
-func theParsingResultShouldBe(expected *godog.Table) error {
+func theParsingResultShouldBe(ctx context.Context, expected *godog.Table) error {
+	parsed := ctx.Value("parsed").([]int)
 
-	return godog.ErrPending
+	for i, v := range expected.Rows[0].Cells {
+		if a, e := strconv.Atoi(v.Value); e != nil {
+			return e
+		} else if a != parsed[i] {
+			return fmt.Errorf("index %d: expected %d, got %d", i, parsed[i], a)
+		}
+	}
+
+	return nil
+}
+
+func theDelimiterIs(ctx context.Context, delim string) context.Context {
+	return context.WithValue(ctx, "delim", delim)
 }
 
 var initialState = map[string]interface{}{
@@ -145,6 +158,7 @@ var initialState = map[string]interface{}{
 	"args":   []int(nil),
 	"err":    error(nil),
 	"parsed": []int(nil),
+	"delim":  "",
 }
 
 func Stepdefs(ctx *godog.ScenarioContext) {
@@ -167,6 +181,7 @@ func Stepdefs(ctx *godog.ScenarioContext) {
 	ctx.Step(`^an error should have occurred$`, anErrorShouldHaveOccurred)
 	ctx.Step(`^I parse the string "([^"]*)"$`, iParseTheString)
 	ctx.Step(`^the parsing result should be$`, theParsingResultShouldBe)
+	ctx.Step(`^the delimiter is "([^"]*)"$`, theDelimiterIs)
 
 	ctx.After(func(ctx context.Context, sc *godog.Scenario, err error) (context.Context, error) {
 		if err != nil {
