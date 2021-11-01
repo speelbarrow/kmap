@@ -7,7 +7,7 @@ Feature: format output
   Scenario: size = 2
     Given the k-map size is 2
     And I randomly generate the arguments to the k-map
-    When I generate the k-map
+    When I initialize the k-map
     And I create the output for the generated k-map
     Then the formatted output should match
       """
@@ -23,7 +23,7 @@ Feature: format output
   Scenario: size = 3
     Given the k-map size is 3
     And I randomly generate the arguments to the k-map
-    When I generate the k-map
+    When I initialize the k-map
     And I create the output for the generated k-map
     Then the formatted output should match
       """
@@ -40,7 +40,7 @@ Feature: format output
   Scenario: size = 4
     Given the k-map size is 4
     And I randomly generate the arguments to the k-map
-    When I generate the k-map
+    When I initialize the k-map
     And I create the output for the generated k-map
     Then the formatted output should match
       """

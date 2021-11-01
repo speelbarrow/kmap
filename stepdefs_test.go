@@ -8,6 +8,7 @@ import (
 	"math"
 	"math/rand"
 	"reflect"
+	"regexp"
 	"runtime"
 	"strconv"
 	"testing"
@@ -152,25 +153,27 @@ func theDelimiterIs(ctx context.Context, delim string) context.Context {
 	return context.WithValue(ctx, "delim", delim)
 }
 
-func iCreateTheOutputForTheGeneratedKmap() error {
-	return godog.ErrPending
+func iCreateTheOutputForTheGeneratedKmap(ctx context.Context) context.Context {
+	formatted, err := ctx.Value("kmap").(*kmap.Kmap).Format()
+	return context.WithValue(context.WithValue(ctx, "formatted", formatted), "err", err)
 }
 
-func iGenerateTheKmap() error {
-	return godog.ErrPending
-}
+func theFormattedOutputShouldMatch(ctx context.Context, expected *godog.DocString) error {
+	if actual := regexp.MustCompile("[01]").ReplaceAllString(ctx.Value("formatted").(string), "X"); actual != expected.Content {
+		return fmt.Errorf("\nexpected:\n%s\nactual:\n%s\n", expected.Content, actual)
+	}
 
-func theFormattedOutputShouldMatch(arg1 *godog.DocString) error {
-	return godog.ErrPending
+	return nil
 }
 
 var initialState = map[string]interface{}{
-	"kmap":   (*kmap.Kmap)(nil),
-	"size":   0,
-	"args":   []int(nil),
-	"err":    error(nil),
-	"parsed": []int(nil),
-	"delim":  "",
+	"kmap":      (*kmap.Kmap)(nil),
+	"size":      0,
+	"args":      []int(nil),
+	"err":       error(nil),
+	"parsed":    []int(nil),
+	"delim":     "",
+	"formatted": "",
 }
 
 func Stepdefs(ctx *godog.ScenarioContext) {
@@ -195,7 +198,6 @@ func Stepdefs(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the parsing result should be$`, theParsingResultShouldBe)
 	ctx.Step(`^the delimiter is "([^"]*)"$`, theDelimiterIs)
 	ctx.Step(`^I create the output for the generated k-map$`, iCreateTheOutputForTheGeneratedKmap)
-	ctx.Step(`^I generate the k-map$`, iGenerateTheKmap)
 	ctx.Step(`^the formatted output should match$`, theFormattedOutputShouldMatch)
 
 	ctx.After(func(ctx context.Context, sc *godog.Scenario, err error) (context.Context, error) {

@@ -57,9 +57,9 @@ func NewKmap(size int, args ...int) (*Kmap, error) {
 }
 
 // Minterms represents a true/false value with each index representing the corresponding minterm in the k-map.
-func (k *Kmap) Minterms() []bool {
+func (kmap *Kmap) Minterms() []bool {
 	var r []bool
-	for _, v := range mintermConvert(k.Values) {
+	for _, v := range mintermConvert(kmap.Values) {
 		r = append(r, v...)
 	}
 
