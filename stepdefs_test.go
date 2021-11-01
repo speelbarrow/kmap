@@ -152,6 +152,18 @@ func theDelimiterIs(ctx context.Context, delim string) context.Context {
 	return context.WithValue(ctx, "delim", delim)
 }
 
+func iCreateTheOutputForTheGeneratedKmap() error {
+	return godog.ErrPending
+}
+
+func iGenerateTheKmap() error {
+	return godog.ErrPending
+}
+
+func theFormattedOutputShouldMatch(arg1 *godog.DocString) error {
+	return godog.ErrPending
+}
+
 var initialState = map[string]interface{}{
 	"kmap":   (*kmap.Kmap)(nil),
 	"size":   0,
@@ -182,6 +194,9 @@ func Stepdefs(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I parse the string "([^"]*)"$`, iParseTheString)
 	ctx.Step(`^the parsing result should be$`, theParsingResultShouldBe)
 	ctx.Step(`^the delimiter is "([^"]*)"$`, theDelimiterIs)
+	ctx.Step(`^I create the output for the generated k-map$`, iCreateTheOutputForTheGeneratedKmap)
+	ctx.Step(`^I generate the k-map$`, iGenerateTheKmap)
+	ctx.Step(`^the formatted output should match$`, theFormattedOutputShouldMatch)
 
 	ctx.After(func(ctx context.Context, sc *godog.Scenario, err error) (context.Context, error) {
 		if err != nil {
