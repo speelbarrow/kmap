@@ -14,9 +14,9 @@ import (
 )
 
 func iInitializeTheKmap(ctx context.Context) context.Context {
-	k, e := kmap.NewKmap(ctx.Value("size").(int), ctx.Value("args").([]int)...)
+	k, err := kmap.NewKmap(ctx.Value("size").(int), ctx.Value("args").([]int)...)
 
-	return context.WithValue(context.WithValue(ctx, "kmap", k), "err", e)
+	return context.WithValue(context.WithValue(ctx, "kmap", k), "err", err)
 }
 
 func iRandomlyGenerateTheArgumentsToTheKmap(ctx context.Context) context.Context {
@@ -125,25 +125,30 @@ func anErrorShouldHaveOccurred(ctx context.Context) (context.Context, error) {
 		return ctx, fmt.Errorf("expected an error occurred but found no error")
 	}
 
-	return context.WithValue(ctx, "err", nil), nil
+	return context.WithValue(ctx, "err", error(nil)), nil
 }
 
-func iParseTheString(s string) error {
-	return godog.ErrPending
+func iParseTheString(ctx context.Context, s string) context.Context {
+	parsed, err := kmap.Parse(s)
+
+	return context.WithValue(context.WithValue(ctx, "parsed", parsed), "err", err)
 }
 
 func theParsingResultShouldBe(expected *godog.Table) error {
 	return godog.ErrPending
 }
 
+var initialState = map[string]interface{}{
+	"kmap":   (*kmap.Kmap)(nil),
+	"size":   0,
+	"args":   []int(nil),
+	"err":    error(nil),
+	"parsed": "",
+}
+
 func Stepdefs(ctx *godog.ScenarioContext) {
 	ctx.Before(func(ctx context.Context, _ *godog.Scenario) (context.Context, error) {
-		for k, v := range map[string]interface{}{
-			"kmap": (*kmap.Kmap)(nil),
-			"size": 0,
-			"args": []int(nil),
-			"err":  error(nil),
-		} {
+		for k, v := range initialState {
 			ctx = context.WithValue(ctx, k, v)
 		}
 
@@ -163,9 +168,14 @@ func Stepdefs(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the parsing result should be$`, theParsingResultShouldBe)
 
 	ctx.After(func(ctx context.Context, sc *godog.Scenario, err error) (context.Context, error) {
-		switch e := ctx.Value("err"); e.(type) {
-		case error:
-			return ctx, fmt.Errorf("the following error occured at some point: %s", e.(error).Error())
+		if err != nil {
+			r := "\nCONTEXT:\n"
+
+			for k := range initialState {
+				r += fmt.Sprintf("%s: %v\n", k, ctx.Value(k))
+			}
+
+			return ctx, fmt.Errorf(r)
 		}
 
 		return ctx, nil
