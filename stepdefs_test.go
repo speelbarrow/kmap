@@ -135,6 +135,7 @@ func iParseTheString(ctx context.Context, s string) context.Context {
 }
 
 func theParsingResultShouldBe(expected *godog.Table) error {
+
 	return godog.ErrPending
 }
 
@@ -143,7 +144,7 @@ var initialState = map[string]interface{}{
 	"size":   0,
 	"args":   []int(nil),
 	"err":    error(nil),
-	"parsed": "",
+	"parsed": []int(nil),
 }
 
 func Stepdefs(ctx *godog.ScenarioContext) {
