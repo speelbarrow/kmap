@@ -154,8 +154,8 @@ func theDelimiterIs(ctx context.Context, delim string) context.Context {
 }
 
 func iCreateTheOutputForTheGeneratedKmap(ctx context.Context) context.Context {
-	formatted, err := ctx.Value("kmap").(*kmap.Kmap).Format()
-	return context.WithValue(context.WithValue(ctx, "formatted", formatted), "err", err)
+	formatted := ctx.Value("kmap").(*kmap.Kmap).Format()
+	return context.WithValue(ctx, "formatted", formatted)
 }
 
 func theFormattedOutputShouldMatch(ctx context.Context, expected *godog.DocString) error {
