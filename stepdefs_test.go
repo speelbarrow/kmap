@@ -166,6 +166,26 @@ func theFormattedOutputShouldMatch(ctx context.Context, expected *godog.DocStrin
 	return nil
 }
 
+func iAnswer(ans string) error {
+	return godog.ErrPending
+}
+
+func iAnswerTheRandomlyGeneratedArgumentsSeperatedBy(delim string) error {
+	return godog.ErrPending
+}
+
+func iRunTheProgram() error {
+	return godog.ErrPending
+}
+
+func iShouldBeAsked(q string) error {
+	return godog.ErrPending
+}
+
+func theProgramShouldOutputAProperKmap() error {
+	return godog.ErrPending
+}
+
 var initialState = map[string]interface{}{
 	"kmap":      (*kmap.Kmap)(nil),
 	"size":      0,
@@ -199,6 +219,11 @@ func Stepdefs(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the delimiter is "([^"]*)"$`, theDelimiterIs)
 	ctx.Step(`^I create the output for the generated k-map$`, iCreateTheOutputForTheGeneratedKmap)
 	ctx.Step(`^the formatted output should match$`, theFormattedOutputShouldMatch)
+	ctx.Step(`^I answer "([^"]*)"$`, iAnswer)
+	ctx.Step(`^I answer the randomly generated arguments seperated by "([^"]*)"$`, iAnswerTheRandomlyGeneratedArgumentsSeperatedBy)
+	ctx.Step(`^I run the program$`, iRunTheProgram)
+	ctx.Step(`^I should be asked "([^"]*)"$`, iShouldBeAsked)
+	ctx.Step(`^the program should output a proper k-map$`, theProgramShouldOutputAProperKmap)
 
 	ctx.After(func(ctx context.Context, sc *godog.Scenario, err error) (context.Context, error) {
 		if err != nil {
@@ -221,7 +246,7 @@ func TestFeatures(t *testing.T) {
 		Options: &godog.Options{
 			Concurrency: runtime.NumCPU(),
 			Format:      "pretty",
-			Paths:       []string{"features"},
+			Paths:       []string{"features", "bin/kmap/features"},
 			Randomize:   -1,
 			TestingT:    t,
 			Tags:        "~@wip",
