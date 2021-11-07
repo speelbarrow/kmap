@@ -246,7 +246,7 @@ func TestFeatures(t *testing.T) {
 		Options: &godog.Options{
 			Concurrency: runtime.NumCPU(),
 			Format:      "pretty",
-			Paths:       []string{"features", "bin/kmap/features"},
+			Paths:       []string{"features"},
 			Randomize:   -1,
 			TestingT:    t,
 			Tags:        "~@wip",
