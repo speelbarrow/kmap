@@ -1,16 +1,19 @@
 package kmap_test
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"github.com/cucumber/godog"
 	"github.com/noah-friedman/kmap"
 	"math"
 	"math/rand"
+	"os"
 	"reflect"
 	"regexp"
 	"runtime"
 	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -166,24 +169,80 @@ func theFormattedOutputShouldMatch(ctx context.Context, expected *godog.DocStrin
 	return nil
 }
 
-func iAnswer(ans string) error {
-	return godog.ErrPending
+func iAnswer(ctx context.Context, ans string) error {
+	_, e := ctx.Value("input").(*os.File).WriteString(ans + "\n")
+	return e
 }
 
-func iAnswerTheRandomlyGeneratedArgumentsSeperatedBy(delim string) error {
-	return godog.ErrPending
+func iAnswerTheRandomlyGeneratedArgumentsSeperatedBy(ctx context.Context, delim string) error {
+	var ans string
+
+	for _, v := range ctx.Value("args").([]int) {
+		ans += fmt.Sprintf("%d%s", v, delim)
+	}
+
+	return iAnswer(ctx, strings.TrimSuffix(ans, delim))
 }
 
-func iRunTheProgram() error {
-	return godog.ErrPending
+func iRunTheProgram(ctx context.Context) (context.Context, error) {
+	if r, input, e := os.Pipe(); e != nil {
+		return ctx, e
+	} else if out, w, e := os.Pipe(); e != nil {
+		return ctx, e
+	} else {
+		var (
+			output = make(chan string)
+			c      = make(chan int)
+		)
+
+		go func() {
+			c <- kmap.Program(r, w)
+			close(c)
+		}()
+
+		go func() {
+			defer func() {
+				_ = out.Close()
+				close(output)
+			}()
+
+			s := bufio.NewScanner(out)
+			for s.Scan() {
+				output <- s.Text()
+			}
+		}()
+
+		go func() {
+			<-c
+
+			_ = r.Close()
+			_ = input.Close()
+			_ = w.Close()
+		}()
+
+		return context.WithValue(context.WithValue(ctx, "input", input), "output", output), nil
+	}
 }
 
-func iShouldBeAsked(q string) error {
-	return godog.ErrPending
+func iShouldBeAsked(ctx context.Context, expected string) error {
+	if actual := <-ctx.Value("output").(chan string); expected != actual {
+		return fmt.Errorf("expected %s, got %s", expected, actual)
+	}
+
+	return nil
 }
 
-func theProgramShouldOutputAProperKmap() error {
-	return godog.ErrPending
+func theProgramShouldOutputAKmapOfSize(ctx context.Context, expected int) error {
+	var output string
+	for v := range ctx.Value("output").(chan string) {
+		output += v
+	}
+
+	if actual := strings.Count(output, "1") + strings.Count(output, "0"); expected != actual {
+		return fmt.Errorf("expected %d cells, found %d", expected, actual)
+	}
+
+	return nil
 }
 
 var initialState = map[string]interface{}{
@@ -194,6 +253,8 @@ var initialState = map[string]interface{}{
 	"parsed":    []int(nil),
 	"delim":     "",
 	"formatted": "",
+	"input":     (*os.File)(nil),
+	"output":    (chan string)(nil),
 }
 
 func Stepdefs(ctx *godog.ScenarioContext) {
@@ -223,11 +284,11 @@ func Stepdefs(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I answer the randomly generated arguments seperated by "([^"]*)"$`, iAnswerTheRandomlyGeneratedArgumentsSeperatedBy)
 	ctx.Step(`^I run the program$`, iRunTheProgram)
 	ctx.Step(`^I should be asked "([^"]*)"$`, iShouldBeAsked)
-	ctx.Step(`^the program should output a proper k-map$`, theProgramShouldOutputAProperKmap)
+	ctx.Step(`^the program should output a k-map of size (\d+)$`, theProgramShouldOutputAKmapOfSize)
 
-	ctx.After(func(ctx context.Context, sc *godog.Scenario, err error) (context.Context, error) {
-		if err != nil {
-			r := "\nCONTEXT:\n"
+	ctx.StepContext().After(func(ctx context.Context, _ *godog.Step, status godog.StepResultStatus, err error) (context.Context, error) {
+		if status == godog.StepFailed {
+			r := "CONTEXT:\n"
 
 			for k := range initialState {
 				r += fmt.Sprintf("%s: %v\n", k, ctx.Value(k))
