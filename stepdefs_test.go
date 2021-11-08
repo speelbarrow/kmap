@@ -246,7 +246,7 @@ func iShouldBeAsked(ctx context.Context, expected string) error {
 	return nil
 }
 
-func theProgramShouldOutputAKmapOfSize(ctx context.Context, expected int) error {
+func theProgramShouldOutputAnEmptyKmapOfSize(ctx context.Context, expected int) error {
 	var output string
 	for v := range ctx.Value("output").(chan string) {
 		output += v
@@ -254,7 +254,7 @@ func theProgramShouldOutputAKmapOfSize(ctx context.Context, expected int) error 
 
 	expected = int(math.Pow(2, float64(expected)))
 
-	if actual := strings.Count(output, "1") + strings.Count(output, "0"); expected != actual {
+	if actual := strings.Count(output, "0"); expected != actual {
 		return fmt.Errorf("expected %d cells, found %d", expected, actual)
 	}
 
@@ -275,6 +275,14 @@ func theProgramShouldExitCleanly(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func iSetTheCommandlineArgumentTo(arg, val string) error {
+	return godog.ErrPending
+}
+
+func theProgramShouldOutput(expected *godog.DocString) error {
+	return godog.ErrPending
 }
 
 var initialState = map[string]interface{}{
@@ -318,9 +326,11 @@ func Stepdefs(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I answer the randomly generated arguments seperated by "([^"]*)"$`, iAnswerTheRandomlyGeneratedArgumentsSeperatedBy)
 	ctx.Step(`^I run the program$`, iRunTheProgram)
 	ctx.Step(`^I should be asked "([^"]*)"$`, iShouldBeAsked)
-	ctx.Step(`^the program should output a k-map of size (\d+)$`, theProgramShouldOutputAKmapOfSize)
+	ctx.Step(`^the program should output an empty k-map of size (\d+)$`, theProgramShouldOutputAnEmptyKmapOfSize)
 	ctx.Step(`^the parsing result should be empty$`, theParsingResultShouldBeEmpty)
 	ctx.Step(`^the program should exit cleanly$`, theProgramShouldExitCleanly)
+	ctx.Step(`^I set the "([^"]*)" command-line argument to "([^"]*)"$`, iSetTheCommandlineArgumentTo)
+	ctx.Step(`^the program should output$`, theProgramShouldOutput)
 
 	ctx.StepContext().After(func(ctx context.Context, _ *godog.Step, status godog.StepResultStatus, err error) (context.Context, error) {
 		if status == godog.StepFailed {

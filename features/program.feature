@@ -8,9 +8,8 @@ Feature: executable program
     Then I should be asked "What is the size of the k-map? (3):"
     When I answer "<sizeInput>"
     Then I should be asked "What are the arguments to the k-map?:"
-    When I randomly generate the arguments to the k-map
-    And I answer the randomly generated arguments seperated by <delim>
-    Then the program should output a k-map of size <size>
+    When I answer ""
+    Then the program should output an empty k-map of size <size>
     And the program should exit cleanly
 
     Scenarios:
