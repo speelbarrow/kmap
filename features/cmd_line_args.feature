@@ -3,10 +3,6 @@ Feature: command line arguments
   As a program
   I need to parse command line arguments
 
-  Background:
-    Given I mock the command-line argument array
-
-  @wip
   Scenario Outline: -size, -s
     Given I set the "<arg>" command-line argument to "<size>"
     When I run the program
@@ -24,7 +20,6 @@ Feature: command line arguments
       | s    | 3    |
       | s    | 4    |
 
-  @wip
   Scenario Outline: -args, -a
     Given I set the "<arg>" command-line argument to "1,3,7"
     When I run the program

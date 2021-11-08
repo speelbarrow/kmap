@@ -2,6 +2,7 @@ package kmap
 
 import (
 	"bufio"
+	"flag"
 	"os"
 	"regexp"
 	"strconv"
@@ -16,46 +17,59 @@ func Program(in, out *os.File) (int, error) {
 	// Create variables to hold input
 	var (
 		size int
-		args []int
+		args string
 	)
 
-	// Output the first question
-	_, _ = out.WriteString("What is the size of the k-map? (3):\n")
+	flag.IntVar(&size, "s", 0, "Shorthand for -size.")
+	flag.IntVar(&size, "size", 0, "The size of the k-map (the number of variables). Valid values are 2, 3, and 4.")
 
-	// Wait for user input, assume 3 if empty
-	if s, e := r.ReadString('\n'); e != nil {
-		return 2, e
-	} else if s = strings.Trim(s, "\n"); s == "" {
-		size = 3
-	} else if size, e = strconv.Atoi(strings.Trim(s, "\n")); e != nil {
-		return 2, e
-	}
+	flag.StringVar(&args, "a", "", "Shorthand for -args.")
+	flag.StringVar(&args, "args", "", "The arguments to the k-map.")
 
-	// Output the second question
-	_, _ = out.WriteString("What are the arguments to the k-map?:\n")
+	flag.Parse()
 
-	// Wait for user input and then parse it
-	if s, e := r.ReadString('\n'); e != nil {
-		return 2, e
-	} else {
-		// Find the delimiter, if it exists
-		var delim string
-		if a := regexp.MustCompile(`^[0-9]+([^0-9]+)`).FindStringSubmatch(s); len(a) > 1 {
-			delim = a[1]
-		}
+	// Output the first question if it was not passed as a command line argument
+	if size == 0 {
+		_, _ = out.WriteString("What is the size of the k-map? (3):\n")
 
-		// Parse the string
-		if args, e = Parse(strings.Trim(s, "\n"), delim); e != nil {
-			return 1, e
+		// Wait for user input, assume 3 if empty
+		if s, e := r.ReadString('\n'); e != nil {
+			return 2, e
+		} else if s = strings.Trim(s, "\n"); s == "" {
+			size = 3
+		} else if size, e = strconv.Atoi(strings.Trim(s, "\n")); e != nil {
+			return 2, e
 		}
 	}
 
-	// Generate the k-map and format it and output it
-	if kmap, e := NewKmap(size, args...); e != nil {
+	// Output the second question if it was not passed as a command line argument
+	if args == "" {
+		_, _ = out.WriteString("What are the arguments to the k-map?:\n")
+
+		// Wait for user input and then parse it
+		var e error
+		if args, e = r.ReadString('\n'); e != nil {
+			return 2, e
+		}
+	}
+
+	// Find the delimiter of the args string, if it exists
+	var delim string
+	if a := regexp.MustCompile(`^[0-9]+([^0-9]+)`).FindStringSubmatch(args); len(a) > 1 {
+		delim = a[1]
+	}
+
+	// Parse the args string
+	if a, e := Parse(strings.Trim(args, "\n"), delim); e != nil {
 		return 1, e
 	} else {
-		_, _ = out.WriteString(kmap.Format())
-	}
+		// Generate the k-map and format it and output it
+		if kmap, e := NewKmap(size, a...); e != nil {
+			return 1, e
+		} else {
+			_, _ = out.WriteString(kmap.Format() + "\n")
+		}
 
-	return 0, nil
+		return 0, nil
+	}
 }

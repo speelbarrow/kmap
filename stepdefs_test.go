@@ -3,6 +3,7 @@ package kmap_test
 import (
 	"bufio"
 	"context"
+	"flag"
 	"fmt"
 	"github.com/cucumber/godog"
 	"github.com/noah-friedman/kmap"
@@ -11,7 +12,6 @@ import (
 	"os"
 	"reflect"
 	"regexp"
-	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -278,25 +278,18 @@ func theProgramShouldExitCleanly(ctx context.Context) error {
 	return nil
 }
 
-func iMockTheCommandLineArgumentArray(ctx context.Context) context.Context {
-	saveOSArgs := os.Args
-	os.Args = os.Args[0:1]
-
-	return context.WithValue(ctx, "saveOSArgs", saveOSArgs)
-}
-
 func iSetTheCommandlineArgumentTo(arg, val string) {
-	os.Args = append(os.Args, arg, val)
+	os.Args = append(os.Args, "-"+arg, val)
 }
 
 func theProgramShouldOutput(ctx context.Context, expected *godog.DocString) error {
 	output := ctx.Value("output").(chan string)
-	close(output)
 
 	var actual string
 	for v := range output {
 		actual += v
 	}
+	actual = strings.TrimSuffix(actual, "\n")
 
 	if expected.Content != actual {
 		return fmt.Errorf("\nexpected:\n%s\nactual:\n%s\n", expected.Content, actual)
@@ -306,18 +299,17 @@ func theProgramShouldOutput(ctx context.Context, expected *godog.DocString) erro
 }
 
 var initialState = map[string]interface{}{
-	"kmap":       (*kmap.Kmap)(nil),
-	"size":       0,
-	"args":       []int(nil),
-	"err":        error(nil),
-	"parsed":     []int(nil),
-	"delim":      "",
-	"formatted":  "",
-	"input":      (*os.File)(nil),
-	"output":     (chan string)(nil),
-	"exitCode":   (chan int)(nil),
-	"exitError":  (chan error)(nil),
-	"saveOSArgs": []string(nil),
+	"kmap":      (*kmap.Kmap)(nil),
+	"size":      0,
+	"args":      []int(nil),
+	"err":       error(nil),
+	"parsed":    []int(nil),
+	"delim":     "",
+	"formatted": "",
+	"input":     (*os.File)(nil),
+	"output":    (chan string)(nil),
+	"exitCode":  (chan int)(nil),
+	"exitError": (chan error)(nil),
 }
 
 func Stepdefs(ctx *godog.ScenarioContext) {
@@ -325,6 +317,9 @@ func Stepdefs(ctx *godog.ScenarioContext) {
 		for k, v := range initialState {
 			ctx = context.WithValue(ctx, k, v)
 		}
+
+		flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+		os.Args = os.Args[0:1]
 
 		return ctx, nil
 	})
@@ -350,7 +345,6 @@ func Stepdefs(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the program should output an empty k-map of size (\d+)$`, theProgramShouldOutputAnEmptyKmapOfSize)
 	ctx.Step(`^the parsing result should be empty$`, theParsingResultShouldBeEmpty)
 	ctx.Step(`^the program should exit cleanly$`, theProgramShouldExitCleanly)
-	ctx.Step(`^I mock the command-line argument array`, iMockTheCommandLineArgumentArray)
 	ctx.Step(`^I set the "([^"]*)" command-line argument to "([^"]*)"$`, iSetTheCommandlineArgumentTo)
 	ctx.Step(`^the program should output$`, theProgramShouldOutput)
 
@@ -365,10 +359,6 @@ func Stepdefs(ctx *godog.ScenarioContext) {
 			return ctx, fmt.Errorf(r)
 		}
 
-		if saveOSArgs := ctx.Value("saveOSArgs").([]string); saveOSArgs != nil {
-			os.Args = saveOSArgs
-		}
-
 		return ctx, nil
 	})
 }
@@ -377,7 +367,7 @@ func TestFeatures(t *testing.T) {
 	if r := (godog.TestSuite{
 		ScenarioInitializer: Stepdefs,
 		Options: &godog.Options{
-			Concurrency: runtime.NumCPU(),
+			Concurrency: 1,
 			Format:      "pretty",
 			Paths:       []string{"features"},
 			Randomize:   -1,
