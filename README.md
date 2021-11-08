@@ -51,3 +51,8 @@ When inputting the arguments of the k-map the user may provide a series of valid
 Instead of inputting parameters directly, the user may provide arguments to the `kmap` program:
 - `-s` or `--size` for the size parameter
 - `-a` or `--args` for the arguments to the k-map
+
+### EXIT CODES
+- `0`: Everything went fine, the program executed successfully
+- `1`: Some kind of bug or error in the way I wrote the program.
+- `2`: Some kind of bug in a library called by the program (possibly due to a misunderstanding of the library on my part).

@@ -35,3 +35,14 @@ Feature: parse string input
       | 4,f,7,10   |
       # Completely invalid
       | foobar     |
+
+  Scenario: empty input
+    Given the delimiter is ""
+    When I parse the string ""
+    Then the parsing result should be empty
+
+  Scenario: one argument
+    Given the delimiter is ""
+    When I parse the string "1"
+    Then the parsing result should be
+      | 1 |

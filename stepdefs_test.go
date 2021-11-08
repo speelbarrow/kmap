@@ -11,9 +11,9 @@ import (
 	"os"
 	"reflect"
 	"regexp"
-	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -191,41 +191,55 @@ func iRunTheProgram(ctx context.Context) (context.Context, error) {
 		return ctx, e
 	} else {
 		var (
-			output = make(chan string)
-			c      = make(chan int)
+			output    = make(chan string)
+			exitCode  = make(chan int, 1)
+			exitError = make(chan error, 1)
 		)
 
 		go func() {
-			c <- kmap.Program(r, w)
-			close(c)
-		}()
+			var wg sync.WaitGroup
 
-		go func() {
-			defer func() {
-				_ = out.Close()
-				close(output)
+			wg.Add(2)
+
+			go func() {
+				defer wg.Done()
+
+				rdr := bufio.NewReader(out)
+
+				for s, e := rdr.ReadString('\n'); e == nil; s, e = rdr.ReadString('\n') {
+					output <- s
+				}
 			}()
 
-			s := bufio.NewScanner(out)
-			for s.Scan() {
-				output <- s.Text()
-			}
-		}()
+			go func() {
+				defer wg.Done()
 
-		go func() {
-			<-c
+				c, e := kmap.Program(r, w)
+
+				exitCode <- c
+				exitError <- e
+
+				close(exitCode)
+				close(exitError)
+
+				_ = w.Close()
+			}()
+
+			wg.Wait()
 
 			_ = r.Close()
 			_ = input.Close()
-			_ = w.Close()
+			_ = out.Close()
+
+			close(output)
 		}()
 
-		return context.WithValue(context.WithValue(ctx, "input", input), "output", output), nil
+		return context.WithValue(context.WithValue(context.WithValue(context.WithValue(ctx, "input", input), "output", output), "exitCode", exitCode), "exitError", exitError), nil
 	}
 }
 
 func iShouldBeAsked(ctx context.Context, expected string) error {
-	if actual := <-ctx.Value("output").(chan string); expected != actual {
+	if actual := strings.TrimSuffix(<-ctx.Value("output").(chan string), "\n"); expected != actual {
 		return fmt.Errorf("expected %s, got %s", expected, actual)
 	}
 
@@ -238,8 +252,26 @@ func theProgramShouldOutputAKmapOfSize(ctx context.Context, expected int) error 
 		output += v
 	}
 
+	expected = int(math.Pow(2, float64(expected)))
+
 	if actual := strings.Count(output, "1") + strings.Count(output, "0"); expected != actual {
 		return fmt.Errorf("expected %d cells, found %d", expected, actual)
+	}
+
+	return nil
+}
+
+func theParsingResultShouldBeEmpty(ctx context.Context) error {
+	if len(ctx.Value("parsed").([]int)) != 0 {
+		return fmt.Errorf("expected empty parsing result, but length > 0")
+	}
+
+	return nil
+}
+
+func theProgramShouldExitCleanly(ctx context.Context) error {
+	if actual := <-ctx.Value("exitCode").(chan int); actual != 0 {
+		return fmt.Errorf("exitted with code %d, error: '%s'", actual, (<-ctx.Value("exitError").(chan error)).Error())
 	}
 
 	return nil
@@ -255,6 +287,8 @@ var initialState = map[string]interface{}{
 	"formatted": "",
 	"input":     (*os.File)(nil),
 	"output":    (chan string)(nil),
+	"exitCode":  (chan int)(nil),
+	"exitError": (chan error)(nil),
 }
 
 func Stepdefs(ctx *godog.ScenarioContext) {
@@ -285,6 +319,8 @@ func Stepdefs(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I run the program$`, iRunTheProgram)
 	ctx.Step(`^I should be asked "([^"]*)"$`, iShouldBeAsked)
 	ctx.Step(`^the program should output a k-map of size (\d+)$`, theProgramShouldOutputAKmapOfSize)
+	ctx.Step(`^the parsing result should be empty$`, theParsingResultShouldBeEmpty)
+	ctx.Step(`^the program should exit cleanly$`, theProgramShouldExitCleanly)
 
 	ctx.StepContext().After(func(ctx context.Context, _ *godog.Step, status godog.StepResultStatus, err error) (context.Context, error) {
 		if status == godog.StepFailed {
@@ -305,7 +341,7 @@ func TestFeatures(t *testing.T) {
 	if r := (godog.TestSuite{
 		ScenarioInitializer: Stepdefs,
 		Options: &godog.Options{
-			Concurrency: runtime.NumCPU(),
+			Concurrency: 1,
 			Format:      "pretty",
 			Paths:       []string{"features"},
 			Randomize:   -1,
