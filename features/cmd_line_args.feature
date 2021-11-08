@@ -3,6 +3,9 @@ Feature: command line arguments
   As a program
   I need to parse command line arguments
 
+  Background:
+    Given I mock the command-line argument array
+
   @wip
   Scenario Outline: -size, -s
     Given I set the "<arg>" command-line argument to "<size>"

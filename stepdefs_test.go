@@ -11,6 +11,7 @@ import (
 	"os"
 	"reflect"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -277,26 +278,46 @@ func theProgramShouldExitCleanly(ctx context.Context) error {
 	return nil
 }
 
-func iSetTheCommandlineArgumentTo(arg, val string) error {
-	return godog.ErrPending
+func iMockTheCommandLineArgumentArray(ctx context.Context) context.Context {
+	saveOSArgs := os.Args
+	os.Args = os.Args[0:1]
+
+	return context.WithValue(ctx, "saveOSArgs", saveOSArgs)
 }
 
-func theProgramShouldOutput(expected *godog.DocString) error {
-	return godog.ErrPending
+func iSetTheCommandlineArgumentTo(arg, val string) {
+	os.Args = append(os.Args, arg, val)
+}
+
+func theProgramShouldOutput(ctx context.Context, expected *godog.DocString) error {
+	output := ctx.Value("output").(chan string)
+	close(output)
+
+	var actual string
+	for v := range output {
+		actual += v
+	}
+
+	if expected.Content != actual {
+		return fmt.Errorf("\nexpected:\n%s\nactual:\n%s\n", expected.Content, actual)
+	}
+
+	return nil
 }
 
 var initialState = map[string]interface{}{
-	"kmap":      (*kmap.Kmap)(nil),
-	"size":      0,
-	"args":      []int(nil),
-	"err":       error(nil),
-	"parsed":    []int(nil),
-	"delim":     "",
-	"formatted": "",
-	"input":     (*os.File)(nil),
-	"output":    (chan string)(nil),
-	"exitCode":  (chan int)(nil),
-	"exitError": (chan error)(nil),
+	"kmap":       (*kmap.Kmap)(nil),
+	"size":       0,
+	"args":       []int(nil),
+	"err":        error(nil),
+	"parsed":     []int(nil),
+	"delim":      "",
+	"formatted":  "",
+	"input":      (*os.File)(nil),
+	"output":     (chan string)(nil),
+	"exitCode":   (chan int)(nil),
+	"exitError":  (chan error)(nil),
+	"saveOSArgs": []string(nil),
 }
 
 func Stepdefs(ctx *godog.ScenarioContext) {
@@ -329,6 +350,7 @@ func Stepdefs(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the program should output an empty k-map of size (\d+)$`, theProgramShouldOutputAnEmptyKmapOfSize)
 	ctx.Step(`^the parsing result should be empty$`, theParsingResultShouldBeEmpty)
 	ctx.Step(`^the program should exit cleanly$`, theProgramShouldExitCleanly)
+	ctx.Step(`^I mock the command-line argument array`, iMockTheCommandLineArgumentArray)
 	ctx.Step(`^I set the "([^"]*)" command-line argument to "([^"]*)"$`, iSetTheCommandlineArgumentTo)
 	ctx.Step(`^the program should output$`, theProgramShouldOutput)
 
@@ -343,6 +365,10 @@ func Stepdefs(ctx *godog.ScenarioContext) {
 			return ctx, fmt.Errorf(r)
 		}
 
+		if saveOSArgs := ctx.Value("saveOSArgs").([]string); saveOSArgs != nil {
+			os.Args = saveOSArgs
+		}
+
 		return ctx, nil
 	})
 }
@@ -351,7 +377,7 @@ func TestFeatures(t *testing.T) {
 	if r := (godog.TestSuite{
 		ScenarioInitializer: Stepdefs,
 		Options: &godog.Options{
-			Concurrency: 1,
+			Concurrency: runtime.NumCPU(),
 			Format:      "pretty",
 			Paths:       []string{"features"},
 			Randomize:   -1,
