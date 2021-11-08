@@ -88,12 +88,12 @@ jobs:
         with:
           go-version: 1.17
       - name: Build binary
-        run: GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o kmap-${{ matrix.os }}-${{ matrix.arch }}-${{ needs.create_release.outputs.release_name }} ./cmd/kmap/
+        run: GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o kmap-${{ matrix.os }}-${{ matrix.arch }}-${{ needs.create_release.outputs.release_name }} ./bin/kmap/
       - name: Add '.exe' extension
         id: exe
         if: matrix.os == 'windows'
         run: |
-          mv quick-factor-windows-${{ matrix.arch }}-${{ needs.create_release.outputs.release_name }} quick-factor-windows-${{ matrix.arch }}-${{ needs.create_release.outputs.release_name }}.exe
+          mv kmap-windows-${{ matrix.arch }}-${{ needs.create_release.outputs.release_name }} kmap-windows-${{ matrix.arch }}-${{ needs.create_release.outputs.release_name }}.exe
           echo "::set-output name=exe::.exe"
       - name: Upload asset
         uses: actions/upload-release-asset@v1
