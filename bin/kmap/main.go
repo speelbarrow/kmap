@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	fmt.Println("kmap v0.1.0")
+	fmt.Println("kmap v0.1.1")
 	fmt.Println("Created by Noah Friedman")
 	fmt.Println()
 
