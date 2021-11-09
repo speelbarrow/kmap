@@ -22,7 +22,7 @@ func NewKmap(size int, args ...int) (*Kmap, error) {
 	case 4:
 		rows = 4
 	default: // If size is not 2, 3, or 4, return an error
-		return nil, fmt.Errorf("invalid size %d", size)
+		return nil, fmt.Errorf("invalid size %d: must be 2, 3, or 4", size)
 	}
 
 	// Set up the k-map with the correct size, applying any provided arguments
@@ -34,7 +34,7 @@ func NewKmap(size int, args ...int) (*Kmap, error) {
 		a := make([]bool, rows*cols)
 		for _, v := range args {
 			if v >= max {
-				return nil, fmt.Errorf("invalid argument %d with size %d", v, size)
+				return nil, fmt.Errorf("invalid argument %d with size %d: must be between 0 and %.0f", v, size, math.Pow(2, float64(size))-1)
 			}
 			a[v] = true
 		}
