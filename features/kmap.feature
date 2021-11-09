@@ -28,19 +28,6 @@ Feature: kmap type
       | 3    | 2   | 4   |
       | 4    | 4   | 4   |
 
-  Scenario: in order of minterms
-    Given the k-map size is 4
-    And the arguments to the k-map are
-      | 0 | 3 | 5 | 6 | 9 | 10 | 12 | 15 |
-    When I initialize the k-map
-    Then the k-map values should match
-      | 1 | 0 | 1 | 0 |
-      | 0 | 1 | 0 | 1 |
-      | 1 | 0 | 1 | 0 |
-      | 0 | 1 | 0 | 1 |
-    And the Minterms method should output
-      | 1 | 0 | 0 | 1 | 0 | 1 | 1 | 0 | 0 | 1 | 1 | 0 | 1 | 0 | 0 | 1 |
-
   Scenario Outline: invalid size
     Given the k-map size is <size>
     When I initialize the k-map

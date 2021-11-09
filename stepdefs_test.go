@@ -54,44 +54,29 @@ func theKmapSizeIs(ctx context.Context, size int) context.Context {
 	return context.WithValue(ctx, "size", size)
 }
 
-func theKmapValuesShouldMatch(ctx context.Context, expected *godog.Table) error {
-	k := ctx.Value("kmap").(*kmap.Kmap)
-
-	if l := len(expected.Rows); l != k.Rows {
-		return fmt.Errorf("expected %d rows, found %d", l, k.Rows)
+func swap23(x *int) {
+	if *x == 2 {
+		*x = 3
+	} else if *x == 3 {
+		*x = 2
 	}
-	if l := len(expected.Rows[0].Cells); l != k.Cols {
-		return fmt.Errorf("expected %d cols, found %d", l, k.Cols)
-	}
-
-	for row, actual := range k.Values {
-		exp := expected.Rows[row]
-		for col, actual := range actual {
-			exp := exp.Cells[col].Value == "1"
-			if actual != exp {
-				var expArr [][]bool
-				for _, v := range expected.Rows {
-					var r []bool
-					for _, v := range v.Cells {
-						r = append(r, v.Value == "1")
-					}
-					expArr = append(expArr, r)
-				}
-
-				return fmt.Errorf("row %d, col %d: expected %t, got %t\nexpected:\n%v\nactual:\n%v\n", row, col, exp, actual, expArr, k.Values)
-			}
-		}
-	}
-
-	return nil
 }
-
 func theKmapValuesShouldMatchTheArguments(ctx context.Context) error {
 	var (
 		k        = ctx.Value("kmap").(*kmap.Kmap)
-		actual   = k.Minterms()
+		actual   = make([]bool, int(math.Pow(2, float64(k.Size))))
 		expected = make([]bool, len(actual))
 	)
+	for i, v := range k.Values {
+		swap23(&i)
+
+		for a, v := range v {
+			swap23(&a)
+
+			actual[i*k.Cols+a] = v
+		}
+	}
+
 	for _, v := range ctx.Value("args").([]int) {
 		expected[v] = true
 	}
@@ -104,16 +89,6 @@ func theKmapValuesShouldMatchTheArguments(ctx context.Context) error {
 		return fmt.Errorf("expected a k-map with args %v, found k-map with args %v", exp, k.Values)
 	}
 
-	return nil
-}
-
-func theMintermsMethodShouldOutput(ctx context.Context, expected *godog.Table) error {
-	actual := ctx.Value("kmap").(*kmap.Kmap).Minterms()
-	for i, exp := range expected.Rows[0].Cells {
-		if exp := exp.Value == "1"; exp != actual[i] {
-			return fmt.Errorf("expected minterm %d to be %t but found %t\nexpected:\n%v\nactual:\n%v\n", i, exp, actual[i], expected, actual)
-		}
-	}
 	return nil
 }
 
@@ -328,9 +303,7 @@ func Stepdefs(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I randomly generate the arguments to the k-map$`, iRandomlyGenerateTheArgumentsToTheKmap)
 	ctx.Step(`^the arguments to the k-map are$`, theArgumentsToTheKmapAre)
 	ctx.Step(`^the k-map size is (\d+)$`, theKmapSizeIs)
-	ctx.Step(`^the k-map values should match$`, theKmapValuesShouldMatch)
 	ctx.Step(`^the k-map values should match the arguments$`, theKmapValuesShouldMatchTheArguments)
-	ctx.Step(`^the Minterms method should output$`, theMintermsMethodShouldOutput)
 	ctx.Step(`^the "([^"]*)" property of the k-map should be (\d+)$`, thePropertyOfTheKmapShouldBe)
 	ctx.Step(`^an error should have occurred$`, anErrorShouldHaveOccurred)
 	ctx.Step(`^I parse the string "([^"]*)"$`, iParseTheString)

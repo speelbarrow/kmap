@@ -45,7 +45,14 @@ func NewKmap(size int, args ...int) (*Kmap, error) {
 		}
 
 		// Swap last two columns and last two rows if applicable
-		mintermConvert(&vals)
+		if rows == 4 {
+			vals[3], vals[2] = vals[2], vals[3]
+		}
+		if cols == 4 {
+			for r := range vals {
+				vals[r][3], vals[r][2] = vals[r][2], vals[r][3]
+			}
+		}
 	} else {
 		// Create rows and fill with boolean arrays of proper length
 		for i := 0; i < rows; i++ {
@@ -54,46 +61,4 @@ func NewKmap(size int, args ...int) (*Kmap, error) {
 	}
 
 	return &Kmap{vals, size, rows, cols}, nil
-}
-
-// Minterms represents a true/false value with each index representing the corresponding minterm in the k-map.
-func (kmap *Kmap) Minterms() []bool {
-	var r []bool
-	for _, v := range mintermConvert(kmap.Values) {
-		r = append(r, v...)
-	}
-
-	return r
-}
-
-// mintermConvert switches k-map values between a proper layout and a layout in order of minterms. v may be [][]bool, in which case a new but updated array will be returned, or *[][]bool, in which case nil will be returned and the original array will be modified.
-func mintermConvert(v interface{}) [][]bool {
-	// Determine type of v, if [][]bool copy into r and set vals to be a pointer to r, otherwise set vals to be v
-	var (
-		r    [][]bool
-		vals *[][]bool
-	)
-	switch v.(type) {
-	case [][]bool:
-		for _, v := range v.([][]bool) {
-			r = append(r, v)
-		}
-		vals = &r
-	case *[][]bool:
-		vals = v.(*[][]bool)
-	default:
-		panic(fmt.Errorf("invalid type passed to mintermConvert function"))
-	}
-
-	switch rows := len(*vals); true {
-	case rows == 4:
-		(*vals)[3], (*vals)[2] = (*vals)[2], (*vals)[3]
-		fallthrough
-	case len((*vals)[0]) == 4:
-		for i := 0; i < rows; i++ {
-			(*vals)[i][3], (*vals)[i][2] = (*vals)[i][2], (*vals)[i][3]
-		}
-	}
-
-	return r
 }
