@@ -2,7 +2,7 @@ module github.com/noah-friedman/kmap
 
 go 1.17
 
-require github.com/cucumber/godog v0.12.0
+require github.com/cucumber/godog v0.12.2
 
 require (
 	github.com/cucumber/gherkin-go/v19 v19.0.3 // indirect
