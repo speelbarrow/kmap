@@ -6,42 +6,45 @@ import "fmt"
 var formatStrings = map[int]string{
 	2: `        y
   ---------
-  | %d | %d |
+  | %c | %c |
   ---------
-x | %d | %d |
+x | %c | %c |
   ---------`,
 
 	3: `              y
   -----------------
-  | %d | %d | %d | %d |
+  | %c | %c | %c | %c |
   -----------------
-x | %d | %d | %d | %d |
+x | %c | %c | %c | %c |
   -----------------
           z`,
 
 	4: `              y
   -----------------
-  | %d | %d | %d | %d |
+  | %c | %c | %c | %c |
   -----------------
-  | %d | %d | %d | %d |
+  | %c | %c | %c | %c |
   ----------------- x
-  | %d | %d | %d | %d |
+  | %c | %c | %c | %c |
 w -----------------
-  | %d | %d | %d | %d |
+  | %c | %c | %c | %c |
   -----------------
           z`,
 }
 
 // Format creates a formatted string that can be outputted containing the data of the Kmap.
 func (kmap *Kmap) Format() string {
-	// Create a flattened version of the k-map that uses '0' and '1' values instead of 'true' and 'false'
+	// Create a flattened version of the k-map that uses '1', 'X' and '0' values instead of &true, &false and nil
+
 	var flat []interface{} // interface is used to allow tuple argument in fmt.Sprintf call
 	for _, v := range kmap.Values {
 		for _, v := range v {
-			if v != nil && *v {
-				flat = append(flat, 1)
+			if v == nil {
+				flat = append(flat, '0')
+			} else if *v {
+				flat = append(flat, '1')
 			} else {
-				flat = append(flat, 0)
+				flat = append(flat, 'X')
 			}
 		}
 	}

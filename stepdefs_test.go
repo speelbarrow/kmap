@@ -11,7 +11,6 @@ import (
 	"math/rand"
 	"os"
 	"reflect"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -166,7 +165,7 @@ func iCreateTheOutputForTheGeneratedKmap(ctx context.Context) context.Context {
 }
 
 func theFormattedOutputShouldMatch(ctx context.Context, expected *godog.DocString) error {
-	if actual := regexp.MustCompile("[01]").ReplaceAllString(ctx.Value("formatted").(string), "X"); actual != expected.Content {
+	if actual := ctx.Value("kmap").(*kmap.Kmap).Format(); actual != expected.Content {
 		return fmt.Errorf("\nexpected:\n%s\nactual:\n%s\n", expected.Content, actual)
 	}
 

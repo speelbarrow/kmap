@@ -1,4 +1,3 @@
-@wip
 Feature: format output
   In order to provide a useful k-map to the user
   As a program
