@@ -15,7 +15,6 @@ Feature: kmap type
       | 3    |
       | 4    |
 
-  @wip
   Scenario Outline: don't care conditions
     Given the k-map size is <size>
     And I randomly generate the don't care conditions of the k-map
@@ -28,7 +27,6 @@ Feature: kmap type
       | 3    |
       | 4    |
 
-  @wip
   Scenario Outline: arguments and don't care conditions
     Given the k-map size is <size>
     And I randomly generate the arguments and don't care conditions for the k-map
@@ -64,7 +62,6 @@ Feature: kmap type
       | 5    |
       | 1    |
 
-  @wip
   Scenario: invalid arguments and don't care conditions
     Given the k-map size is 3
     And the arguments to the k-map are

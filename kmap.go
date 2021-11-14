@@ -25,24 +25,33 @@ func NewKmap(size int, args, dontCare []int) (*Kmap, error) {
 		return nil, fmt.Errorf("invalid size %d: must be 2, 3, or 4", size)
 	}
 
-	// Set up the k-map with the correct size, applying any provided arguments
+	// Set up the k-map with the correct size, applying any provided arguments or don't care conditions
 	var vals [][]*bool
-	if len(args) != 0 {
-		max := int(math.Pow(2, float64(size))) // Define the max limit an argument may be
+	if len(args) != 0 || len(dontCare) != 0 {
+		max := int(math.Pow(2, float64(size))) // The max limit an argument may be
 
-		// Create a flat k-map with true values at indices of arguments
-		a := make([]*bool, rows*cols)
-		for _, v := range args {
-			if v >= max {
-				return nil, fmt.Errorf("invalid argument %d with size %d: must be between 0 and %.0f", v, size, math.Pow(2, float64(size))-1)
+		// Create a flat k-map with true values at indices of arguments and false values at indices of don't care conditions
+		flat := make([]*bool, rows*cols)
+		for b, a := range map[bool][]int{
+			true:  args,
+			false: dontCare,
+		} {
+			for _, v := range a {
+				// Check that the index is valid
+				if v >= max {
+					return nil, fmt.Errorf("invalid argument %d with size %d: must be between 0 and %.0f", v, size, math.Pow(2, float64(size))-1)
+				} else if flat[v] != nil {
+					return nil, fmt.Errorf("arguments and don't care conditions may not overlap, but both contain %d", v)
+				}
+
+				b := b // Re-define the boolean variable to ensure unique addresses
+				flat[v] = &b
 			}
-			b := true
-			a[v] = &b
 		}
 
 		// Un-flatten the k-map and store in vals
 		for i, s := cols, rows*cols; i <= s; i += cols {
-			vals = append(vals, a[i-cols:i])
+			vals = append(vals, flat[i-cols:i])
 		}
 
 		// Swap last two columns and last two rows if applicable
