@@ -1,3 +1,4 @@
+@wip
 Feature: executable program
   In order to generate k-maps for users
   As a developer
@@ -8,6 +9,8 @@ Feature: executable program
     Then I should be asked "What is the size of the k-map? (3):"
     When I answer "<sizeInput>"
     Then I should be asked "What are the arguments to the k-map?:"
+    When I answer ""
+    Then I should be asked "What are the don't care conditions of the k-map?:"
     When I answer ""
     Then the program should output an empty k-map of size <size>
     And the program should exit cleanly

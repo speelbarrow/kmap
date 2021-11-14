@@ -1,3 +1,4 @@
+@wip
 Feature: command line arguments
   In order to have users easily provide program arguments
   As a program
@@ -7,6 +8,8 @@ Feature: command line arguments
     Given I set the "<arg>" command-line argument to "<size>"
     When I run the program
     Then I should be asked "What are the arguments to the k-map?:"
+    When I answer ""
+    Then I should be asked "What are the don't care conditions of the k-map?:"
     When I answer ""
     Then the program should output an empty k-map of size <size>
     And the program should exit cleanly
@@ -25,6 +28,8 @@ Feature: command line arguments
     When I run the program
     Then I should be asked "What is the size of the k-map? (3):"
     When I answer ""
+    Then I should be asked "What are the don't care conditions of the k-map?:"
+    When I answer ""
     Then the program should output
       """
                     y
@@ -41,3 +46,26 @@ Feature: command line arguments
       | arg  |
       | args |
       | a    |
+
+  Scenario Outline: -dont-care, -dc
+    Given I set the "<arg>" command line argument to "4,5,7"
+    When I run the program
+    Then I should be asked "What is the size of the k-map? (3):"
+    When I answer ""
+    Then I should be asked "What are the arguments to the k-map?:"
+    When I answer ""
+    Then the program should output
+      """
+                    y
+        -----------------
+        | 0 | 0 | 0 | 0 |
+        -----------------
+      x | X | X | X | 0 |
+        -----------------
+                z
+      """
+
+    Scenarios:
+      | arg       |
+      | dont-care |
+      | dc        |
