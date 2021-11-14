@@ -64,7 +64,7 @@ func Program(in, out *os.File) (int, error) {
 		return 1, e
 	} else {
 		// Generate the k-map and format it and output it
-		if kmap, e := NewKmap(size, a...); e != nil {
+		if kmap, e := NewKmap(size, a, nil); e != nil {
 			return 1, e
 		} else {
 			_, _ = out.WriteString(kmap.Format() + "\n")

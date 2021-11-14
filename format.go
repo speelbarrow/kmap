@@ -38,7 +38,7 @@ func (kmap *Kmap) Format() string {
 	var flat []interface{} // interface is used to allow tuple argument in fmt.Sprintf call
 	for _, v := range kmap.Values {
 		for _, v := range v {
-			if v {
+			if v != nil && *v {
 				flat = append(flat, 1)
 			} else {
 				flat = append(flat, 0)

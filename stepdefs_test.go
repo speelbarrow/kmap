@@ -19,35 +19,55 @@ import (
 )
 
 func iInitializeTheKmap(ctx context.Context) context.Context {
-	k, err := kmap.NewKmap(ctx.Value("size").(int), ctx.Value("args").([]int)...)
+	k, err := kmap.NewKmap(ctx.Value("size").(int), ctx.Value("args").([]int), ctx.Value("dontCare").([]int))
 
 	return context.WithValue(context.WithValue(ctx, "kmap", k), "err", err)
 }
 
-func iRandomlyGenerateTheArgumentsToTheKmap(ctx context.Context) context.Context {
+func iRandomlyGenerate(ctx context.Context, key string) context.Context {
 	size := int(math.Pow(2, float64(ctx.Value("size").(int))))
 
-	var args []int
+	var a []int
 	for i := 0; i < size; i++ {
 		if rand.Int31n(2) == 1 {
-			args = append(args, i)
+			a = append(a, i)
 		}
 	}
 
-	return context.WithValue(ctx, "args", args)
+	return context.WithValue(ctx, key, a)
+}
+func iRandomlyGenerateTheArgumentsToTheKmap(ctx context.Context) context.Context {
+	return iRandomlyGenerate(ctx, "args")
+}
+func iRandomlyGenerateTheDontCareConditionsOfTheKmap(ctx context.Context) context.Context {
+	return iRandomlyGenerate(ctx, "dontCare")
 }
 
-func theArgumentsToTheKmapAre(ctx context.Context, args *godog.Table) (context.Context, error) {
+func parseTable(t *godog.Table) ([]int, error) {
 	var r []int
-	for _, v := range args.Rows[0].Cells {
+	for _, v := range t.Rows[0].Cells {
 		if i, e := strconv.Atoi(v.Value); e != nil {
-			return ctx, e
+			return nil, e
 		} else {
 			r = append(r, i)
 		}
 	}
 
-	return context.WithValue(ctx, "args", r), nil
+	return r, nil
+}
+func theArgumentsToTheKmapAre(ctx context.Context, t *godog.Table) (context.Context, error) {
+	if args, e := parseTable(t); e != nil {
+		return ctx, e
+	} else {
+		return context.WithValue(ctx, "args", args), nil
+	}
+}
+func theDontCareConditionsOfTheKmapAre(ctx context.Context, t *godog.Table) (context.Context, error) {
+	if dontCare, e := parseTable(t); e != nil {
+		return ctx, e
+	} else {
+		return context.WithValue(ctx, "dontCare", dontCare), nil
+	}
 }
 
 func theKmapSizeIs(ctx context.Context, size int) context.Context {
@@ -61,12 +81,13 @@ func swap23(x *int) {
 		*x = 2
 	}
 }
-func theKmapValuesShouldMatchTheArguments(ctx context.Context) error {
+func theKmapValuesShouldMatch(ctx context.Context, a string, b bool) error {
 	var (
 		k        = ctx.Value("kmap").(*kmap.Kmap)
-		actual   = make([]bool, int(math.Pow(2, float64(k.Size))))
-		expected = make([]bool, len(actual))
+		actual   = make([]*bool, k.Rows*k.Cols)
+		expected = ctx.Value(a).([]int)
 	)
+
 	for i, v := range k.Values {
 		swap23(&i)
 
@@ -77,19 +98,26 @@ func theKmapValuesShouldMatchTheArguments(ctx context.Context) error {
 		}
 	}
 
-	for _, v := range ctx.Value("args").([]int) {
-		expected[v] = true
-	}
-
-	if !reflect.DeepEqual(expected, actual) {
-		var exp [][]bool
-		for i, s := k.Cols, k.Rows*k.Cols; i <= s; i += k.Cols {
-			exp = append(exp, expected[i-k.Cols:i])
+	for _, v := range expected {
+		if actual := actual[v]; actual == nil || *actual != b {
+			return fmt.Errorf("minterm %d: expected &%t, got %v", v, b, actual)
 		}
-		return fmt.Errorf("expected a k-map with args %v, found k-map with args %v", exp, k.Values)
 	}
 
 	return nil
+}
+
+func theKmapValuesShouldMatchTheArguments(ctx context.Context) error {
+	return theKmapValuesShouldMatch(ctx, "args", true)
+}
+func theKmapValuesShouldMatchTheDontCareConditions(ctx context.Context) error {
+	return theKmapValuesShouldMatch(ctx, "dontCare", false)
+}
+func theKmapValuesShouldMatchTheArgumentsAndDontCareConditions() godog.Steps {
+	return godog.Steps{
+		"the k-map values should match the arguments",
+		"the k-map values should match the don't care conditions",
+	}
 }
 
 func thePropertyOfTheKmapShouldBe(ctx context.Context, prop string, expected int64) error {
@@ -273,6 +301,22 @@ func theProgramShouldOutput(ctx context.Context, expected *godog.DocString) erro
 	return nil
 }
 
+func iRandomlyGenerateTheArgumentsAndDontCareConditionsForTheKmap(ctx context.Context) context.Context {
+	size := int(math.Pow(2, float64(ctx.Value("size").(int))))
+
+	var args, dontCare []int
+	for i := 0; i < size; i++ {
+		switch rand.Intn(3) {
+		case 1:
+			args = append(args, i)
+		case 2:
+			dontCare = append(dontCare, i)
+		}
+	}
+
+	return context.WithValue(context.WithValue(ctx, "args", args), "dontCare", dontCare)
+}
+
 var initialState = map[string]interface{}{
 	"kmap":      (*kmap.Kmap)(nil),
 	"size":      0,
@@ -285,6 +329,7 @@ var initialState = map[string]interface{}{
 	"output":    (chan string)(nil),
 	"exitCode":  (chan int)(nil),
 	"exitError": (chan error)(nil),
+	"dontCare":  []int(nil),
 }
 
 func Stepdefs(ctx *godog.ScenarioContext) {
@@ -301,9 +346,13 @@ func Stepdefs(ctx *godog.ScenarioContext) {
 
 	ctx.Step(`^I initialize the k-map$`, iInitializeTheKmap)
 	ctx.Step(`^I randomly generate the arguments to the k-map$`, iRandomlyGenerateTheArgumentsToTheKmap)
+	ctx.Step(`^I randomly generate the don\'t care conditions of the k-map$`, iRandomlyGenerateTheDontCareConditionsOfTheKmap)
 	ctx.Step(`^the arguments to the k-map are$`, theArgumentsToTheKmapAre)
+	ctx.Step(`^the don\'t care conditions of the k-map are$`, theDontCareConditionsOfTheKmapAre)
 	ctx.Step(`^the k-map size is (\d+)$`, theKmapSizeIs)
 	ctx.Step(`^the k-map values should match the arguments$`, theKmapValuesShouldMatchTheArguments)
+	ctx.Step(`^the k-map values should match the don\'t care conditions$`, theKmapValuesShouldMatchTheDontCareConditions)
+	ctx.Step(`^the k-map values should match the arguments and don\'t care conditions$`, theKmapValuesShouldMatchTheArgumentsAndDontCareConditions)
 	ctx.Step(`^the "([^"]*)" property of the k-map should be (\d+)$`, thePropertyOfTheKmapShouldBe)
 	ctx.Step(`^an error should have occurred$`, anErrorShouldHaveOccurred)
 	ctx.Step(`^I parse the string "([^"]*)"$`, iParseTheString)
@@ -320,6 +369,7 @@ func Stepdefs(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the program should exit cleanly$`, theProgramShouldExitCleanly)
 	ctx.Step(`^I set the "([^"]*)" command-line argument to "([^"]*)"$`, iSetTheCommandlineArgumentTo)
 	ctx.Step(`^the program should output$`, theProgramShouldOutput)
+	ctx.Step(`^I randomly generate the arguments and don\'t care conditions for the k-map$`, iRandomlyGenerateTheArgumentsAndDontCareConditionsForTheKmap)
 
 	ctx.StepContext().After(func(ctx context.Context, _ *godog.Step, status godog.StepResultStatus, err error) (context.Context, error) {
 		if status == godog.StepFailed {
