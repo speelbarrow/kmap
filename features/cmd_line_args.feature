@@ -48,7 +48,7 @@ Feature: command line arguments
       | a    |
 
   Scenario Outline: -dont-care, -dc
-    Given I set the "<arg>" command line argument to "4,5,7"
+    Given I set the "<arg>" command-line argument to "4,5,7"
     When I run the program
     Then I should be asked "What is the size of the k-map? (3):"
     When I answer ""
