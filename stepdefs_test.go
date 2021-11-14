@@ -319,7 +319,7 @@ func iRandomlyGenerateTheArgumentsAndDontCareConditionsForTheKmap(ctx context.Co
 
 var initialState = map[string]interface{}{
 	"kmap":      (*kmap.Kmap)(nil),
-	"size":      0,
+	"size":      3,
 	"args":      []int(nil),
 	"err":       error(nil),
 	"parsed":    []int(nil),

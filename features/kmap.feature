@@ -63,8 +63,7 @@ Feature: kmap type
       | 1    |
 
   Scenario: invalid arguments and don't care conditions
-    Given the k-map size is 3
-    And the arguments to the k-map are
+    Given the arguments to the k-map are
       | 1 | 3 | 7 |
     And the don't care conditions of the k-map are
       | 2 | 3 | 5 |
