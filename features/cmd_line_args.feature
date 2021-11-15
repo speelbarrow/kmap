@@ -1,4 +1,3 @@
-@wip
 Feature: command line arguments
   In order to have users easily provide program arguments
   As a program
