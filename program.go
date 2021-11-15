@@ -59,7 +59,6 @@ func Program(in, out *os.File) (int, error) {
 		{&args, argsStr, "arguments to"},
 		{&dontCare, dontCareStr, "don't care conditions of"},
 	} {
-		fmt.Println(strc.Prompt)
 		if strc.String == "" {
 			if _, e := out.WriteString(fmt.Sprintf("What are the %s the k-map?:\n", strc.Prompt)); e != nil {
 				return 2, e
