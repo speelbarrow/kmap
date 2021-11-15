@@ -1,5 +1,8 @@
 # CHANGELOG
 
+### [v1.0.1](https://github.com/noah-friedman/kmap/tree/v1.0.1)
+- Remove print line used for debugging
+
 ### [v1.0.0](https://github.com/noah-friedman/kmap/tree/v1.0.0)
 - Implement don't care conditions
 - Remove unused Minterms method of [Kmap](https://github.com/noah-friedman/kmap/blob/v1.0.0/kmap.go)
