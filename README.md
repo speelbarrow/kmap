@@ -6,19 +6,23 @@ A program for generating [k-maps](https://en.wikipedia.org/wiki/Karnaugh_map) ba
 ```shell
 > kmap
   
-  Enter size: 3
-  Enter arguments: 0,1,6,7
+  What is the size of the k-map? (3): 
+  3
+  What are the arguments to the k-map?: 
+  0,1,6,7
+  What are the don`t care conditions of of the k-map?:
+  2, 4
   
                 y
     -----------------
-    | 1 | 1 | 0 | 0 |
+    | 1 | 1 | 0 | X |
     -----------------
-  x | 0 | 0 | 1 | 1 |
+  x | X | 0 | 1 | 1 |
     -----------------
             z
 ```
 ```shell
-> kmap -s 2 -a '1, 2'
+> kmap -s 2 -a '1, 2' -dc ''
           y
     ---------
     | 0 | 1 |
@@ -30,7 +34,7 @@ A program for generating [k-maps](https://en.wikipedia.org/wiki/Karnaugh_map) ba
 ### INSTALLATION
 - With Go 1.17+ installed:
   ```shell
-  > go install github.com/noah-friedman/kmap/bin/kmap
+  > go install github.com/noah-friedman/kmap/bin/kmap@latest
   ```
 
 - Without Go 1.17+ installed:
@@ -38,19 +42,25 @@ A program for generating [k-maps](https://en.wikipedia.org/wiki/Karnaugh_map) ba
   See [Releases](https://github.com/noah-friedman/kmap/releases) for pre-compiled binaries.
 
 ### USAGE
-After running the `kmap` program the user is prompted for two inputs:
+After running the `kmap` program the user is prompted for three inputs:
 - The size of the k-map (a.k.a. the number of variables in the k-map)
   
   Valid: [2-4]
 - The arguments of the k-map
 
   Valid: [0-2<sup>size</sup>)
+- The don't care conditions of the k-map
+  
+  Valid: [0-2<sup>size</sup>)
+
+**NOTE**: The arguments and don't care conditions must not overlap.
 
 When inputting the arguments of the k-map the user may provide a series of valid numbers seperated by any characters as long as each separation contains the *same* characters. Otherwise, an error will occur.
 
 Instead of inputting parameters directly, the user may provide arguments to the `kmap` program:
-- `-s` or `--size` for the size parameter
-- `-a` or `--args` for the arguments to the k-map
+- `-s` or `-size` for the size parameter
+- `-a` or `-args` for the arguments to the k-map
+- `-dc` or `-dont-care` for the don't care conditions of the k-map
 
 ### EXIT CODES
 - `0`: Everything went fine, the program executed successfully
