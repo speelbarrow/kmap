@@ -52,27 +52,31 @@ func Program(in, out *os.File) (int, error) {
 	}
 
 	// Get arguments and don't care condition inputs if necessary, making sure any provided input is parsed properly before considering it valid
-	for ptr, strs := range map[*[]int][2]string{
-		&args:     {argsStr, "arguments to"},
-		&dontCare: {dontCareStr, "don't care conditions of"},
+	for _, strc := range []struct {
+		Pointer        *[]int
+		String, Prompt string
+	}{
+		{&args, argsStr, "arguments to"},
+		{&dontCare, dontCareStr, "don't care conditions of"},
 	} {
-		if strs[0] == "" {
-			if _, e := out.WriteString(fmt.Sprintf("What are the %s the k-map?:\n", strs[1])); e != nil {
+		fmt.Println(strc.Prompt)
+		if strc.String == "" {
+			if _, e := out.WriteString(fmt.Sprintf("What are the %s the k-map?:\n", strc.Prompt)); e != nil {
 				return 2, e
-			} else if strs[0], e = r.ReadString('\n'); e != nil {
+			} else if strc.String, e = r.ReadString('\n'); e != nil {
 				return 2, e
 			}
 		}
 
 		var delim string
-		if regex := regexp.MustCompile(`^[0-9]+([^0-9]+)`).FindStringSubmatch(strs[0]); len(regex) >= 2 {
+		if regex := regexp.MustCompile(`^[0-9]+([^0-9]+)`).FindStringSubmatch(strc.String); len(regex) >= 2 {
 			delim = regex[1]
 		}
 
-		if p, e := Parse(strings.TrimSuffix(strs[0], "\n"), delim); e != nil {
+		if p, e := Parse(strings.TrimSuffix(strc.String, "\n"), delim); e != nil {
 			return 1, e
 		} else {
-			*ptr = p
+			*strc.Pointer = p
 		}
 	}
 
