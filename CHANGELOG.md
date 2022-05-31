@@ -1,5 +1,8 @@
 # CHANGELOG
 
+### [v1.0.2](https://github.com/noah-friedman/kmap/tree/v1.0.2)
+- Update dependencies to avoid [security issues](https://github.com/noah-friedman/kmap/security/dependabot/1)
+
 ### [v1.0.1](https://github.com/noah-friedman/kmap/tree/v1.0.1)
 - Remove print line used for debugging
 

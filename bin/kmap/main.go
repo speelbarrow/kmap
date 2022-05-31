@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/noah-friedman/kmap"
 	"os"
+
+	"github.com/noah-friedman/kmap"
 )
 
 func main() {
-	fmt.Println("kmap v1.0.1")
+	fmt.Println("kmap v1.0.2")
 	fmt.Println("Created by Noah Friedman")
 	fmt.Println()
 
